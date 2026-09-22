@@ -3,6 +3,7 @@ from django.contrib import messages
 from accounts.decorators import role_required
 from .models import Document
 from .forms import DocumentUploadForm
+from .tasks import dispatch_document_processing
 
 
 @role_required('admin', 'super_admin')
@@ -47,9 +48,12 @@ def upload_view(request):
             document.status = Document.Status.PENDING
             document.save()
 
+            # Dispatch background processing pipeline asynchronously
+            dispatch_document_processing(document.pk)
+
             messages.success(
                 request,
-                f"Document '{document.title}' uploaded successfully! Queueing for background ingestion."
+                f"Document '{document.title}' uploaded successfully! Processing started in background."
             )
             return redirect('documents:detail', pk=document.pk)
         else:
@@ -65,6 +69,23 @@ def detail_view(request, pk):
     """View displaying document details, ingestion status, and metadata."""
     document = get_object_or_404(Document, pk=pk)
     return render(request, 'documents/document_detail.html', {'document': document})
+
+
+@role_required('admin', 'super_admin')
+def reprocess_view(request, pk):
+    """View for manually re-triggering ingestion processing for a document."""
+    document = get_object_or_404(Document, pk=pk)
+
+    if request.method == 'POST':
+        document.status = Document.Status.PENDING
+        document.error_message = None
+        document.save(update_fields=['status', 'error_message'])
+
+        dispatch_document_processing(document.pk)
+        messages.info(request, f"Reprocessing triggered for '{document.title}'.")
+        return redirect('documents:detail', pk=document.pk)
+
+    return redirect('documents:detail', pk=document.pk)
 
 
 @role_required('admin', 'super_admin')

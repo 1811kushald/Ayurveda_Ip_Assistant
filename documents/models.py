@@ -1,6 +1,16 @@
+import os
 from django.db import models
 from django.conf import settings
 from django.core.validators import FileExtensionValidator
+
+# Check if using PostgreSQL (for pgvector) or SQLite (dev fallback)
+USE_PGVECTOR = 'postgresql' in settings.DATABASES['default'].get('ENGINE', '')
+
+if USE_PGVECTOR:
+    from pgvector.django import VectorField, HnswIndex
+else:
+    VectorField = None
+    HnswIndex = None
 
 
 class Document(models.Model):
@@ -71,3 +81,46 @@ class Document(models.Model):
             return f"{size / 1024:.1f} KB"
         else:
             return f"{size / (1024 * 1024):.1f} MB"
+
+
+class DocumentChunk(models.Model):
+    """Model representing a semantic chunk extracted from a Document with vector embedding."""
+
+    document = models.ForeignKey(
+        Document,
+        on_delete=models.CASCADE,
+        related_name='chunks',
+    )
+    content = models.TextField()
+    chunk_index = models.PositiveIntegerField()
+    page_number = models.PositiveIntegerField(null=True, blank=True)
+    section_title = models.CharField(max_length=500, blank=True, default='')
+
+    # Vector embedding: pgvector (768 dims) in PostgreSQL, JSONField in SQLite fallback
+    if USE_PGVECTOR and VectorField is not None:
+        embedding = VectorField(dimensions=768)
+    else:
+        embedding = models.JSONField(default=list, help_text="Fallback vector array for dev")
+
+    token_count = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['document', 'chunk_index']
+        verbose_name = 'document chunk'
+        verbose_name_plural = 'document chunks'
+        indexes = (
+            [
+                HnswIndex(
+                    name='chunk_embedding_cosine_idx',
+                    fields=['embedding'],
+                    m=16,
+                    ef_construction=64,
+                    opclasses=['vector_cosine_ops'],
+                )
+            ] if USE_PGVECTOR and HnswIndex is not None else []
+        )
+
+    def __str__(self):
+        sec = f" [{self.section_title}]" if self.section_title else ""
+        return f"{self.document.title} - Chunk #{self.chunk_index}{sec}"
