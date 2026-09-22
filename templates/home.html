@@ -1,0 +1,136 @@
+{% extends 'base.html' %}
+
+{% block title %}IP-SAKTI Sahayak — AI-Powered IP Guidance for Ayurveda{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="bg-dark text-white py-5">
+    <div class="container py-5">
+        <div class="row align-items-center">
+            <div class="col-lg-7">
+                <h1 class="display-4 fw-bold mb-3">
+                    <i class="bi bi-shield-check text-success"></i>
+                    IP-SAKTI Sahayak
+                </h1>
+                <p class="lead mb-4">
+                    Your AI-powered assistant for navigating Intellectual Property
+                    and regulatory guidance in <strong>Ayurveda</strong> —
+                    grounded in Indian law, with source citations you can verify.
+                </p>
+                <div class="d-flex gap-3">
+                    {% if user.is_authenticated %}
+                    <a href="{% url 'chat:index' %}" class="btn btn-success btn-lg">
+                        <i class="bi bi-chat-dots me-2"></i>Start Asking
+                    </a>
+                    {% else %}
+                    <a href="{% url 'accounts:register' %}" class="btn btn-success btn-lg">
+                        <i class="bi bi-person-plus me-2"></i>Get Started Free
+                    </a>
+                    <a href="{% url 'accounts:login' %}" class="btn btn-outline-light btn-lg">
+                        Login
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="col-lg-5 d-none d-lg-block text-center">
+                <i class="bi bi-book display-1 text-success opacity-50"></i>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Features Section -->
+<section class="py-5">
+    <div class="container">
+        <h2 class="text-center mb-5">How IP-SAKTI Sahayak Helps You</h2>
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-body text-center p-4">
+                        <div class="display-5 text-primary mb-3">
+                            <i class="bi bi-search"></i>
+                        </div>
+                        <h5 class="card-title">Source-Cited Answers</h5>
+                        <p class="card-text text-muted">
+                            Every answer cites specific sections of Indian IP laws,
+                            the Patents Act, Biodiversity Act, and AYUSH regulations.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-body text-center p-4">
+                        <div class="display-5 text-success mb-3">
+                            <i class="bi bi-shield-lock"></i>
+                        </div>
+                        <h5 class="card-title">IP Protection Guidance</h5>
+                        <p class="card-text text-muted">
+                            Understand patentability under Section 3(p), GI protection,
+                            TKDL implications, and biodiversity compliance.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-body text-center p-4">
+                        <div class="display-5 text-warning mb-3">
+                            <i class="bi bi-clipboard-check"></i>
+                        </div>
+                        <h5 class="card-title">Regulatory Navigation</h5>
+                        <p class="card-text text-muted">
+                            Navigate FSSAI, Drugs & Cosmetics Act, GMP requirements,
+                            and AYUSH licensing for your herbal products.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Sample Questions Section -->
+<section class="bg-light py-5">
+    <div class="container">
+        <h2 class="text-center mb-4">Questions You Can Ask</h2>
+        <div class="row g-3 justify-content-center">
+            <div class="col-md-6">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body">
+                        <ul class="list-unstyled mb-0">
+                            <li class="mb-3">
+                                <i class="bi bi-chat-left-quote text-primary me-2"></i>
+                                <em>"Can this Ayurvedic formulation be patented in India?"</em>
+                            </li>
+                            <li class="mb-3">
+                                <i class="bi bi-chat-left-quote text-primary me-2"></i>
+                                <em>"What prior-art evidence exists for turmeric wound healing?"</em>
+                            </li>
+                            <li class="mb-3">
+                                <i class="bi bi-chat-left-quote text-primary me-2"></i>
+                                <em>"What laws apply if I want to commercially sell this herbal product?"</em>
+                            </li>
+                            <li>
+                                <i class="bi bi-chat-left-quote text-primary me-2"></i>
+                                <em>"Has this formulation been documented in traditional texts?"</em>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Disclaimer -->
+<section class="py-4">
+    <div class="container">
+        <div class="alert alert-warning text-center mb-0" role="alert">
+            <i class="bi bi-exclamation-triangle me-2"></i>
+            <strong>Disclaimer:</strong> IP-SAKTI Sahayak provides AI-generated guidance based on Indian legal documents.
+            It is not a substitute for professional legal advice. Always consult a qualified IP attorney for formal guidance.
+        </div>
+    </div>
+</section>
+{% endblock %}
