@@ -1,7 +1,8 @@
 from django.urls import path
+from . import views
 
 app_name = 'documents'
 
 urlpatterns = [
-    # Will be populated in Sprint 3
+    path('', views.list_view, name='list'),
 ]

@@ -1,7 +1,8 @@
 from django.urls import path
+from . import views
 
 app_name = 'chat'
 
 urlpatterns = [
-    # Will be populated in Sprint 6
+    path('', views.index_view, name='index'),
 ]
