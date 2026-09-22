@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+
+{% block title %}Profile — IP-SAKTI Sahayak{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-7">
+            <div class="card shadow border-0 rounded-3">
+                <div class="card-header bg-dark text-white p-3">
+                    <h5 class="mb-0"><i class="bi bi-person-gear me-2"></i>User Profile</h5>
+                </div>
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center mb-4">
+                        <div class="bg-success text-white rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 60px; height: 60px; font-size: 1.5rem;">
+                            <i class="bi bi-person"></i>
+                        </div>
+                        <div>
+                            <h4 class="mb-0">{{ user.full_name|default:user.email }}</h4>
+                            <span class="badge bg-secondary">{{ user.get_role_display }}</span>
+                            <span class="text-muted small ms-2">Member since {{ user.date_joined|date:"M Y" }}</span>
+                        </div>
+                    </div>
+
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+
+                        <div class="mb-3">
+                            <label class="form-label text-muted">Email Address (Read-only)</label>
+                            <input type="text" class="form-control bg-light" value="{{ user.email }}" readonly>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="{{ form.full_name.id_for_label }}" class="form-label">Full Name</label>
+                            {{ form.full_name }}
+                            {% if form.full_name.errors %}
+                            <div class="text-danger small mt-1">{{ form.full_name.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="d-flex justify-content-between align-items-center">
+                            <a href="{% url 'home' %}" class="btn btn-outline-secondary">Cancel</a>
+                            <button type="submit" class="btn btn-success fw-bold">Save Changes</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
