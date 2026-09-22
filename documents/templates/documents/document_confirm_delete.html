@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+
+{% block title %}Delete Document — IP-SAKTI Sahayak{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow border-0 rounded-3">
+                <div class="card-header bg-danger text-white p-3">
+                    <h5 class="mb-0"><i class="bi bi-exclamation-triangle me-2"></i>Confirm Document Deletion</h5>
+                </div>
+                <div class="card-body p-4 text-center">
+                    <i class="bi bi-trash display-3 text-danger mb-3 d-block"></i>
+                    <h4>Are you sure?</h4>
+                    <p class="text-muted">
+                        You are about to delete <strong>"{{ document.title }}"</strong> from the legal corpus.
+                        This will remove the file and all associated index chunks.
+                    </p>
+
+                    <form method="post" class="mt-4">
+                        {% csrf_token %}
+                        <div class="d-flex justify-content-center gap-3">
+                            <a href="{% url 'documents:detail' document.pk %}" class="btn btn-secondary px-4">Cancel</a>
+                            <button type="submit" class="btn btn-danger px-4 fw-bold">Delete Permanently</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
