@@ -1,66 +1,111 @@
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm">
+<nav class="navbar navbar-expand-lg navbar-dark custom-navbar sticky-top">
     <div class="container">
-        <a class="navbar-brand fw-bold" href="{% url 'home' %}">
-            <i class="bi bi-shield-check me-2"></i>IP-SAKTI Sahayak
+        <!-- Brand Logo & Title -->
+        <a class="navbar-brand-custom" href="{% url 'home' %}">
+            <div class="brand-icon-box">
+                <i class="bi bi-shield-check"></i>
+            </div>
+            <div class="brand-title">
+                <span class="brand-main">IP-SAKTI</span>
+                <span class="brand-sub">Sahayak &bull; AI</span>
+            </div>
         </a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+
+        <!-- Mobile Toggler -->
+        <button class="navbar-toggler border-0 shadow-none px-2" type="button" data-bs-toggle="collapse"
                 data-bs-target="#navbarNav" aria-controls="navbarNav"
                 aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
         </button>
+
+        <!-- Navbar Menu Items -->
         <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav me-auto">
+            <ul class="navbar-nav me-auto my-2 my-lg-0 gap-1">
                 {% if user.is_authenticated %}
                 <li class="nav-item">
-                    <a class="nav-link" href="{% url 'chat:index' %}">
-                        <i class="bi bi-chat-dots me-1"></i>Chat
+                    <a class="nav-link-custom {% if request.resolver_match.app_name == 'chat' %}active{% endif %}" href="{% url 'chat:index' %}">
+                        <i class="bi bi-chat-dots-fill text-success"></i>
+                        <span>AI Assistant</span>
                     </a>
                 </li>
                 {% if user.is_admin %}
                 <li class="nav-item">
-                    <a class="nav-link" href="{% url 'documents:list' %}">
-                        <i class="bi bi-file-earmark-text me-1"></i>Documents
+                    <a class="nav-link-custom {% if request.resolver_match.app_name == 'documents' %}active{% endif %}" href="{% url 'documents:list' %}">
+                        <i class="bi bi-file-earmark-text-fill text-primary"></i>
+                        <span>Corpus Docs</span>
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="{% url 'dashboard:index' %}">
-                        <i class="bi bi-speedometer2 me-1"></i>Dashboard
+                    <a class="nav-link-custom {% if request.resolver_match.app_name == 'dashboard' %}active{% endif %}" href="{% url 'dashboard:index' %}">
+                        <i class="bi bi-speedometer2 text-warning"></i>
+                        <span>Admin Analytics</span>
                     </a>
                 </li>
                 {% endif %}
+                {% else %}
+                <li class="nav-item">
+                    <a class="nav-link-custom {% if request.path == '/' %}active{% endif %}" href="{% url 'home' %}">
+                        <i class="bi bi-house-door-fill text-success"></i>
+                        <span>Home</span>
+                    </a>
+                </li>
                 {% endif %}
             </ul>
-            <ul class="navbar-nav">
+
+            <!-- Right-aligned user menu / auth buttons -->
+            <ul class="navbar-nav align-items-lg-center gap-2">
                 {% if user.is_authenticated %}
                 <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" href="#" role="button"
+                    <a class="nav-link dropdown-toggle user-chip" href="#" role="button"
                        data-bs-toggle="dropdown" aria-expanded="false">
-                        <i class="bi bi-person-circle me-1"></i>{{ user.full_name|default:user.email }}
+                        <div class="user-avatar-circle">
+                            {{ user.email|slice:":1"|upper }}
+                        </div>
+                        <span>{{ user.full_name|default:user.email|truncatechars:20 }}</span>
                     </a>
-                    <ul class="dropdown-menu dropdown-menu-end">
-                        <li><span class="dropdown-item-text text-muted small">{{ user.get_role_display }}</span></li>
-                        <li><hr class="dropdown-divider"></li>
-                        <li>
-                            <a class="dropdown-item" href="{% url 'accounts:profile' %}">
-                                <i class="bi bi-person me-2"></i>Profile
-                            </a>
+                    <ul class="dropdown-menu dropdown-menu-end dropdown-menu-custom mt-2">
+                        <li class="px-3 py-2 border-bottom border-secondary border-opacity-25">
+                            <div class="fw-bold text-white small">{{ user.full_name|default:user.email }}</div>
+                            <div class="d-flex align-items-center gap-1 mt-1">
+                                {% if user.is_super_admin %}
+                                <span class="badge bg-danger" style="font-size: 0.65rem;">Super Admin</span>
+                                {% elif user.is_admin %}
+                                <span class="badge bg-primary" style="font-size: 0.65rem;">Admin</span>
+                                {% else %}
+                                <span class="badge bg-success" style="font-size: 0.65rem;">User</span>
+                                {% endif %}
+                                <small class="text-white-50" style="font-size: 0.7rem;">{{ user.email }}</small>
+                            </div>
                         </li>
                         <li>
+                            <a class="dropdown-item mt-1" href="{% url 'accounts:profile' %}">
+                                <i class="bi bi-person-gear me-2 text-info"></i>Account Profile
+                            </a>
+                        </li>
+                        {% if user.is_super_admin %}
+                        <li>
+                            <a class="dropdown-item" href="{% url 'dashboard:users' %}">
+                                <i class="bi bi-people me-2 text-warning"></i>User Management
+                            </a>
+                        </li>
+                        {% endif %}
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
                             <a class="dropdown-item text-danger" href="{% url 'accounts:logout' %}">
-                                <i class="bi bi-box-arrow-right me-2"></i>Logout
+                                <i class="bi bi-box-arrow-right me-2"></i>Sign Out
                             </a>
                         </li>
                     </ul>
                 </li>
                 {% else %}
                 <li class="nav-item">
-                    <a class="nav-link" href="{% url 'accounts:login' %}">
-                        <i class="bi bi-box-arrow-in-right me-1"></i>Login
+                    <a class="nav-link-custom" href="{% url 'accounts:login' %}">
+                        <i class="bi bi-box-arrow-in-right"></i>Log In
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="btn btn-outline-light btn-sm ms-2 mt-1" href="{% url 'accounts:register' %}">
-                        Register
+                    <a class="btn btn-success fw-semibold px-3 py-1.5 rounded-pill shadow-sm" href="{% url 'accounts:register' %}" style="font-size: 0.9rem;">
+                        <i class="bi bi-person-plus me-1"></i>Get Started
                     </a>
                 </li>
                 {% endif %}
