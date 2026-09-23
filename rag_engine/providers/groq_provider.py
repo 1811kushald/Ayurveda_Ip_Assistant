@@ -10,9 +10,9 @@ from rag_engine.providers.base import BaseLLMProvider
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_MODEL = 'qwen-qwq-32b'
+DEFAULT_MODEL = 'qwen/qwen3.8-27b'
 DEFAULT_TEMPERATURE = 0.1  # Low temp for factual legal/IP responses
-DEFAULT_MAX_TOKENS = 2048
+DEFAULT_MAX_TOKENS = 750  # Fit within Groq free tier 1000 OTPM limit
 
 
 class GroqLLMProvider(BaseLLMProvider):

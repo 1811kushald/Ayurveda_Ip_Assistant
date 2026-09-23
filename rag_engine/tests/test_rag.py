@@ -279,7 +279,7 @@ class GeneratorTest(TestCase):
         mock_provider = MagicMock()
         mock_provider.generate.return_value = {
             'content': 'Section 3(d) prevents evergreening. [Source: Patents Act, Section 3(d), Page 12]',
-            'model': 'qwen-qwq-32b',
+            'model': 'qwen/qwen3.8-27b',
             'input_tokens': 500,
             'output_tokens': 50,
         }
@@ -293,7 +293,7 @@ class GeneratorTest(TestCase):
         self.assertIn('answer', result)
         self.assertIn('sources', result)
         self.assertIn('model', result)
-        self.assertEqual(result['model'], 'qwen-qwq-32b')
+        self.assertEqual(result['model'], 'qwen/qwen3.8-27b')
         self.assertEqual(len(result['sources']), 2)
 
 
@@ -321,7 +321,7 @@ class PipelineTest(TestCase):
         mock_generate.return_value = {
             'answer': 'Test answer with [Source: Test Doc, Section 1, Page 1]',
             'sources': [{'document_title': 'Test Doc', 'section_title': 'Section 1', 'page_number': '1'}],
-            'model': 'qwen-qwq-32b',
+            'model': 'qwen/qwen3.8-27b',
             'input_tokens': 100,
             'output_tokens': 50,
         }
