@@ -3,14 +3,7 @@ from django.db import models
 from django.conf import settings
 from django.core.validators import FileExtensionValidator
 
-# Check if using PostgreSQL (for pgvector) or SQLite (dev fallback)
-USE_PGVECTOR = 'postgresql' in settings.DATABASES['default'].get('ENGINE', '')
-
-if USE_PGVECTOR:
-    from pgvector.django import VectorField, HnswIndex
-else:
-    VectorField = None
-    HnswIndex = None
+from pgvector.django import VectorField, HnswIndex
 
 
 class Document(models.Model):
@@ -96,11 +89,8 @@ class DocumentChunk(models.Model):
     page_number = models.PositiveIntegerField(null=True, blank=True)
     section_title = models.CharField(max_length=500, blank=True, default='')
 
-    # Vector embedding: pgvector (768 dims) in PostgreSQL, JSONField in SQLite fallback
-    if USE_PGVECTOR and VectorField is not None:
-        embedding = VectorField(dimensions=768)
-    else:
-        embedding = models.JSONField(default=list, help_text="Fallback vector array for dev")
+    # Vector embedding: pgvector (768 dims)
+    embedding = VectorField(dimensions=768)
 
     token_count = models.PositiveIntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -109,17 +99,15 @@ class DocumentChunk(models.Model):
         ordering = ['document', 'chunk_index']
         verbose_name = 'document chunk'
         verbose_name_plural = 'document chunks'
-        indexes = (
-            [
-                HnswIndex(
-                    name='chunk_embedding_cosine_idx',
-                    fields=['embedding'],
-                    m=16,
-                    ef_construction=64,
-                    opclasses=['vector_cosine_ops'],
-                )
-            ] if USE_PGVECTOR and HnswIndex is not None else []
-        )
+        indexes = [
+            HnswIndex(
+                name='chunk_embedding_cosine_idx',
+                fields=['embedding'],
+                m=16,
+                ef_construction=64,
+                opclasses=['vector_cosine_ops'],
+            )
+        ]
 
     def __str__(self):
         sec = f" [{self.section_title}]" if self.section_title else ""
