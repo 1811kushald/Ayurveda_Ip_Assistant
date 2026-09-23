@@ -1,0 +1,106 @@
+{% extends 'base.html' %}
+
+{% block title %}System Health &amp; Diagnostics — IP-SAKTI Sahayak{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-1"><i class="bi bi-activity text-success me-2"></i>System Health &amp; Diagnostics</h2>
+            <p class="text-muted small mb-0">Live connectivity, vector index, and API provider verification. Checked at: <strong>{{ checked_at }}</strong></p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{% url 'dashboard:system_status' %}" class="btn btn-outline-success">
+                <i class="bi bi-arrow-clockwise me-1"></i>Re-run Diagnostics
+            </a>
+            <a href="{% url 'dashboard:index' %}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-1"></i>Back to Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- Diagnostic Cards -->
+    <div class="row g-3">
+        {% for diag in diagnostics %}
+        <div class="col-md-6">
+            <div class="card shadow-sm border-0 rounded-3 bg-white h-100 p-3">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div class="d-flex align-items-center">
+                        <i class="bi {{ diag.icon }} fs-2 me-3"></i>
+                        <div>
+                            <h6 class="fw-bold mb-1 text-dark">{{ diag.name }}</h6>
+                            <small class="text-muted d-block">{{ diag.details }}</small>
+                        </div>
+                    </div>
+                    <div>
+                        {% if diag.status == 'healthy' %}
+                        <span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>Healthy</span>
+                        {% elif diag.status == 'warning' %}
+                        <span class="badge bg-warning text-dark"><i class="bi bi-exclamation-triangle me-1"></i>Warning</span>
+                        {% else %}
+                        <span class="badge bg-danger"><i class="bi bi-x-circle me-1"></i>Error</span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% if diag.latency_ms is not None %}
+                <div class="mt-3 pt-2 border-top d-flex justify-content-between align-items-center">
+                    <small class="text-muted">Response Latency:</small>
+                    <span class="badge bg-light text-secondary border small">{{ diag.latency_ms }} ms</span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Technical Architecture Reference -->
+    <div class="card shadow-sm border-0 rounded-3 bg-white mt-4 p-4">
+        <h5 class="fw-bold mb-3"><i class="bi bi-diagram-2 text-primary me-2"></i>Active Pipeline Architecture</h5>
+        <div class="table-responsive">
+            <table class="table table-bordered align-middle small mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Stage</th>
+                        <th>Component</th>
+                        <th>Model / Technology</th>
+                        <th>Free Tier Quota</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>1. Text Parsing &amp; Chunking</strong></td>
+                        <td>PyMuPDF Parser</td>
+                        <td>Section-aware semantic regex splitter</td>
+                        <td>In-memory ($<512\text{ MB}$)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>2. Dense Vector Embeddings</strong></td>
+                        <td>Google AI Studio</td>
+                        <td><code>gemini-embedding-001</code> (768 dimensions)</td>
+                        <td>100 RPM / 1000 RPD (Free)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>3. Vector Storage &amp; Search</strong></td>
+                        <td>Supabase PostgreSQL</td>
+                        <td><code>pgvector.django</code> HNSW Index (Cosine)</td>
+                        <td>500 MB Perpetual (Free)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>4. Cross-Encoder Reranking</strong></td>
+                        <td>Jina AI API</td>
+                        <td><code>jina-reranker-v2-base-multilingual</code></td>
+                        <td>10M Tokens / 500 RPM (Free)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>5. Source-Cited Generation</strong></td>
+                        <td>Groq Cloud</td>
+                        <td><code>qwen/qwen3.8-27b</code> (Temp: 0.1, 750 tokens)</td>
+                        <td>30 RPM / 1000 OTPM (Free)</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

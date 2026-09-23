@@ -1,0 +1,128 @@
+{% extends 'base.html' %}
+
+{% block title %}User Management — IP-SAKTI Sahayak{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-1"><i class="bi bi-people-fill text-primary me-2"></i>User Management</h2>
+            <p class="text-muted small mb-0">Manage platform accounts, promote roles, and control access permissions.</p>
+        </div>
+        <div>
+            <a href="{% url 'dashboard:index' %}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-1"></i>Back to Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- Search & Filter Card -->
+    <div class="card shadow-sm border-0 mb-4 bg-white rounded-3">
+        <div class="card-body p-3">
+            <form method="get" class="row g-2 align-items-center">
+                <div class="col-md-6">
+                    <input type="text" name="q" class="form-control" placeholder="Search by name or email..." value="{{ search_query|default:'' }}">
+                </div>
+                <div class="col-md-4">
+                    <select name="role" class="form-select">
+                        <option value="">All Roles</option>
+                        {% for r_val, r_label in roles %}
+                        <option value="{{ r_val }}" {% if selected_role == r_val %}selected{% endif %}>{{ r_label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary w-100"><i class="bi bi-search me-1"></i>Search</button>
+                    {% if search_query or selected_role %}
+                    <a href="{% url 'dashboard:users' %}" class="btn btn-outline-secondary"><i class="bi bi-x-circle"></i></a>
+                    {% endif %}
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Users Table -->
+    <div class="card shadow-sm border-0 rounded-3 bg-white">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>User</th>
+                            <th>Role</th>
+                            <th>Status</th>
+                            <th>Threads</th>
+                            <th>Joined</th>
+                            <th>Last Login</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for u in users %}
+                        <tr>
+                            <td>
+                                <div class="fw-bold text-dark">{{ u.full_name|default:"(No Name)" }}</div>
+                                <small class="text-muted">{{ u.email }}</small>
+                            </td>
+                            <td>
+                                {% if u.role == 'super_admin' %}
+                                <span class="badge bg-danger">Super Admin</span>
+                                {% elif u.role == 'admin' %}
+                                <span class="badge bg-primary">Admin</span>
+                                {% else %}
+                                <span class="badge bg-secondary">User</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if u.is_active %}
+                                <span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>Active</span>
+                                {% else %}
+                                <span class="badge bg-danger"><i class="bi bi-x-circle me-1"></i>Inactive</span>
+                                {% endif %}
+                            </td>
+                            <td><strong>{{ u.conv_count }}</strong></td>
+                            <td><small class="text-muted">{{ u.date_joined|date:"M d, Y" }}</small></td>
+                            <td><small class="text-muted">{{ u.last_login|date:"M d, Y H:i"|default:"Never" }}</small></td>
+                            <td class="text-end">
+                                <div class="d-flex justify-content-end gap-2">
+                                    <!-- Change Role Dropdown Form -->
+                                    <form method="post" action="{% url 'dashboard:change_role' u.pk %}" class="d-inline-flex align-items-center gap-1">
+                                        {% csrf_token %}
+                                        <select name="role" class="form-select form-select-sm" style="width: 130px;" onchange="this.form.submit()">
+                                            {% for r_val, r_label in roles %}
+                                            <option value="{{ r_val }}" {% if u.role == r_val %}selected{% endif %}>{{ r_label }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </form>
+
+                                    <!-- Status Toggle Form -->
+                                    {% if u.pk != user.pk %}
+                                    <form method="post" action="{% url 'dashboard:toggle_status' u.pk %}" class="d-inline">
+                                        {% csrf_token %}
+                                        {% if u.is_active %}
+                                        <button type="submit" class="btn btn-outline-danger btn-sm" title="Deactivate user" onclick="return confirm('Deactivate account for {{ u.email }}?');">
+                                            <i class="bi bi-person-x"></i>
+                                        </button>
+                                        {% else %}
+                                        <button type="submit" class="btn btn-outline-success btn-sm" title="Activate user">
+                                            <i class="bi bi-person-check"></i>
+                                        </button>
+                                        {% endif %}
+                                    </form>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7" class="text-center py-4 text-muted">No users matched your filter criteria.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
