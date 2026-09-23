@@ -13,7 +13,7 @@ load_dotenv(BASE_DIR / '.env')
 
 DEBUG = True
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'testserver', '[::1]', '*']
 
 # Database — Supabase PostgreSQL (primary) or SQLite (fallback for initial testing)
 # Set DATABASE_URL in your .env file to use Supabase
