@@ -1,0 +1,304 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ conversation.title }} — IP-SAKTI Sahayak{% endblock %}
+
+{% block extra_css %}
+<style>
+    .chat-layout-height {
+        height: calc(100vh - 170px);
+        min-height: 550px;
+    }
+    .chat-scrollable {
+        overflow-y: auto;
+        height: calc(100% - 130px);
+        scroll-behavior: smooth;
+    }
+    .chat-sidebar-scroll {
+        overflow-y: auto;
+        height: calc(100% - 60px);
+    }
+    .hover-danger:hover {
+        color: #dc3545 !important;
+    }
+    .hover-white:hover {
+        color: #ffffff !important;
+    }
+    .typing-dots span {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background-color: #198754;
+        animation: typing 1.4s infinite ease-in-out both;
+        margin: 0 2px;
+    }
+    .typing-dots span:nth-child(1) { animation-delay: -0.32s; }
+    .typing-dots span:nth-child(2) { animation-delay: -0.16s; }
+    @keyframes typing {
+        0%, 80%, 100% { transform: scale(0); opacity: 0.3; }
+        40% { transform: scale(1); opacity: 1; }
+    }
+    .htmx-indicator {
+        display: none;
+    }
+    .htmx-request.htmx-indicator,
+    .htmx-request .htmx-indicator {
+        display: flex !important;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-lg-4 py-3">
+    <div class="row g-3 chat-layout-height">
+
+        <!-- Sidebar: Conversation History -->
+        <div class="col-lg-3 col-md-4 d-flex flex-column h-100">
+            <div class="card shadow-sm border-0 rounded-3 h-100 p-3 bg-white">
+                <a href="{% url 'chat:new' %}" class="btn btn-success fw-bold w-100 mb-3 shadow-sm">
+                    <i class="bi bi-plus-lg me-1"></i>New Conversation
+                </a>
+
+                <div class="d-flex align-items-center justify-content-between mb-2 px-1">
+                    <span class="text-uppercase text-muted fw-bold" style="font-size: 0.75rem; letter-spacing: 0.5px;">Chat History</span>
+                    <span class="badge bg-light text-secondary border">{{ conversations|length }}</span>
+                </div>
+
+                <div class="chat-sidebar-scroll pe-1">
+                    {% include 'chat/partials/conversation_list.html' %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Chat Area -->
+        <div class="col-lg-9 col-md-8 d-flex flex-column h-100">
+            <div class="card shadow-sm border-0 rounded-3 h-100 d-flex flex-column bg-white">
+
+                <!-- Chat Header -->
+                <div class="card-header bg-white border-bottom py-3 px-4 d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center me-3 text-truncate">
+                        <h5 id="conversation-title-header" class="fw-bold mb-0 text-truncate">
+                            <i class="bi bi-chat-left-text text-success me-2"></i>{{ conversation.title }}
+                        </h5>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <form method="post" action="{% url 'chat:clear' conversation.pk %}" onsubmit="return confirm('Clear all messages in this conversation?');" class="mb-0">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-outline-secondary btn-sm" title="Clear message history">
+                                <i class="bi bi-eraser me-1"></i>Clear
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Messages Container -->
+                <div id="chat-messages-container" class="card-body p-4 chat-scrollable bg-light">
+                    {% if messages %}
+                        {% for msg in messages %}
+                            {% if msg.sender == 'user' %}
+                            <!-- User Message -->
+                            <div class="d-flex justify-content-end mb-3">
+                                <div class="card bg-success text-white shadow-sm border-0 rounded-4 px-3 py-2" style="max-width: 80%;">
+                                    <div class="d-flex align-items-center mb-1">
+                                        <span class="small fw-semibold me-auto text-white-50"><i class="bi bi-person-fill me-1"></i>You</span>
+                                        <small class="text-white-50 ms-2" style="font-size: 0.75rem;">{{ msg.created_at|date:"h:i A" }}</small>
+                                    </div>
+                                    <div class="message-body" style="white-space: pre-wrap; font-size: 0.95rem;">{{ msg.content }}</div>
+                                </div>
+                            </div>
+                            {% else %}
+                            <!-- Assistant Message -->
+                            <div class="d-flex justify-content-start mb-4">
+                                <div class="card bg-white shadow-sm border rounded-4 px-3 py-3" style="max-width: 88%;">
+                                    <div class="d-flex align-items-center mb-2">
+                                        <div class="d-flex align-items-center">
+                                            <i class="bi bi-shield-fill-check text-success fs-5 me-2"></i>
+                                            <strong class="text-dark" style="font-size: 0.95rem;">IP-SAKTI Sahayak</strong>
+                                        </div>
+                                        <div class="ms-auto d-flex align-items-center gap-2">
+                                            {% if msg.model_name and msg.model_name != 'error' %}
+                                            <span class="badge bg-light text-secondary border small" style="font-size: 0.7rem;">
+                                                <i class="bi bi-cpu me-1"></i>{{ msg.model_name }}
+                                            </span>
+                                            {% endif %}
+                                            {% if msg.latency_seconds %}
+                                            <span class="badge bg-light text-secondary border small" style="font-size: 0.7rem;">
+                                                <i class="bi bi-stopwatch me-1"></i>{{ msg.latency_seconds|floatformat:2 }}s
+                                            </span>
+                                            {% endif %}
+                                            <small class="text-muted" style="font-size: 0.75rem;">{{ msg.created_at|date:"h:i A" }}</small>
+                                        </div>
+                                    </div>
+
+                                    <div class="message-body text-dark" style="white-space: pre-wrap; line-height: 1.6; font-size: 0.95rem;">{{ msg.content }}</div>
+
+                                    {% if msg.sources %}
+                                    <div class="accordion mt-3" id="sources-acc-{{ msg.id }}">
+                                        <div class="accordion-item border bg-light rounded-3">
+                                            <h2 class="accordion-header" id="heading-{{ msg.id }}">
+                                                <button class="accordion-button collapsed py-2 px-3 bg-light text-primary fw-semibold small shadow-none rounded-3" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-{{ msg.id }}" aria-expanded="false">
+                                                    <i class="bi bi-journal-bookmark-fill me-2"></i>Cited Legal Sources ({{ msg.sources|length }})
+                                                </button>
+                                            </h2>
+                                            <div id="collapse-{{ msg.id }}" class="accordion-collapse collapse" data-bs-parent="#sources-acc-{{ msg.id }}">
+                                                <div class="accordion-body p-3 pt-2">
+                                                    <div class="list-group list-group-flush">
+                                                        {% for src in msg.sources %}
+                                                        <div class="list-group-item bg-transparent px-0 py-2 border-bottom">
+                                                            <div class="d-flex justify-content-between align-items-start">
+                                                                <div class="fw-bold text-dark small">
+                                                                    <i class="bi bi-file-earmark-pdf text-danger me-1"></i>{{ src.document_title }}
+                                                                </div>
+                                                                {% if src.page_number %}
+                                                                <span class="badge bg-secondary text-white small" style="font-size: 0.7rem;">Page {{ src.page_number }}</span>
+                                                                {% endif %}
+                                                            </div>
+                                                            {% if src.section_title %}
+                                                            <small class="text-muted d-block mt-1"><i class="bi bi-bookmark me-1"></i>{{ src.section_title }}</small>
+                                                            {% endif %}
+                                                        </div>
+                                                        {% endfor %}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% endif %}
+                        {% endfor %}
+                    {% else %}
+                        <!-- Welcome Greeting & Prompts -->
+                        <div class="text-center py-5 px-3">
+                            <div class="mb-3">
+                                <i class="bi bi-shield-check text-success display-3"></i>
+                            </div>
+                            <h4 class="fw-bold text-dark">Welcome to IP-SAKTI Sahayak</h4>
+                            <p class="text-muted small mx-auto" style="max-width: 550px;">
+                                Your AI legal and regulatory assistant for Indian Ayurveda, TKDL guidelines, Patents Act, AYUSH regulations, and the Biological Diversity Act.
+                            </p>
+
+                            <div class="row g-2 justify-content-center mt-4 text-start" style="max-width: 750px; margin: 0 auto;">
+                                <div class="col-md-6">
+                                    <button type="button" class="btn btn-outline-secondary w-100 text-start p-3 h-100 suggestion-btn" data-query="What are the patentability criteria for Ayurvedic formulations under Section 3(d) of the Indian Patents Act?">
+                                        <div class="fw-bold text-success small mb-1"><i class="bi bi-file-earmark-lock me-1"></i>Patents Act</div>
+                                        <div class="small text-muted">What are patentability criteria for Ayurvedic formulations under Section 3(d)?</div>
+                                    </button>
+                                </div>
+                                <div class="col-md-6">
+                                    <button type="button" class="btn btn-outline-secondary w-100 text-start p-3 h-100 suggestion-btn" data-query="How does the Biological Diversity Act regulate commercial utilization of Indian medicinal plants?">
+                                        <div class="fw-bold text-success small mb-1"><i class="bi bi-tree me-1"></i>Biodiversity Act</div>
+                                        <div class="small text-muted">How does the Biological Diversity Act regulate use of medicinal plants?</div>
+                                    </button>
+                                </div>
+                                <div class="col-md-6">
+                                    <button type="button" class="btn btn-outline-secondary w-100 text-start p-3 h-100 suggestion-btn" data-query="What role does the Traditional Knowledge Digital Library (TKDL) play in preventing biopiracy?">
+                                        <div class="fw-bold text-success small mb-1"><i class="bi bi-book me-1"></i>TKDL Biopiracy</div>
+                                        <div class="small text-muted">What role does TKDL play in preventing biopiracy of Ayurveda?</div>
+                                    </button>
+                                </div>
+                                <div class="col-md-6">
+                                    <button type="button" class="btn btn-outline-secondary w-100 text-start p-3 h-100 suggestion-btn" data-query="What are the licensing requirements for ASU (Ayurveda, Siddha, Unani) drugs under the Drugs and Cosmetics Act?">
+                                        <div class="fw-bold text-success small mb-1"><i class="bi bi-capsule me-1"></i>AYUSH &amp; Drug Regs</div>
+                                        <div class="small text-muted">What are licensing requirements for ASU drugs under the Drugs Act?</div>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+
+                    <!-- Loading Indicator Spinner -->
+                    <div id="htmx-loading-indicator" class="htmx-indicator align-items-center gap-2 p-3 bg-white border rounded-4 shadow-sm mb-3" style="max-width: 400px;">
+                        <div class="typing-dots">
+                            <span></span><span></span><span></span>
+                        </div>
+                        <small class="text-muted fw-semibold">Consulting legal corpus &amp; generating sources...</small>
+                    </div>
+                </div>
+
+                <!-- Query Input Bar -->
+                <div class="card-footer bg-white border-top p-3">
+                    <form id="chat-query-form"
+                          method="post"
+                          action="{% url 'chat:send_message' conversation.pk %}"
+                          hx-post="{% url 'chat:send_message' conversation.pk %}"
+                          hx-target="#chat-messages-container"
+                          hx-swap="beforeend"
+                          hx-indicator="#htmx-loading-indicator">
+                        {% csrf_token %}
+
+                        <div class="row g-2 align-items-center">
+                            <div class="col-md-3 col-sm-4">
+                                {{ form.category }}
+                            </div>
+                            <div class="col-md-9 col-sm-8">
+                                <div class="input-group shadow-sm rounded-3">
+                                    {{ form.content }}
+                                    <button type="submit" class="btn btn-success px-4 fw-bold" id="chat-send-btn">
+                                        <i class="bi bi-send-fill me-1"></i>Send
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const msgContainer = document.getElementById('chat-messages-container');
+        const textarea = document.getElementById('chat-input-textarea');
+        const form = document.getElementById('chat-query-form');
+
+        function scrollToBottom() {
+            if (msgContainer) {
+                msgContainer.scrollTop = msgContainer.scrollHeight;
+            }
+        }
+
+        // Scroll to bottom on initial load
+        scrollToBottom();
+
+        // Auto-scroll when new message is swapped in via HTMX
+        document.body.addEventListener('htmx:afterSwap', function(evt) {
+            if (evt.detail.target.id === 'chat-messages-container') {
+                scrollToBottom();
+                if (textarea) {
+                    textarea.value = '';
+                    textarea.focus();
+                }
+            }
+        });
+
+        // Submit form on Enter key (Shift+Enter for newline)
+        if (textarea) {
+            textarea.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    if (textarea.value.trim().length > 0) {
+                        htmx.trigger(form, 'submit');
+                    }
+                }
+            });
+        }
+
+        // Suggestion prompt buttons
+        document.querySelectorAll('.suggestion-btn').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                const query = this.getAttribute('data-query');
+                if (textarea) {
+                    textarea.value = query;
+                    htmx.trigger(form, 'submit');
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}
