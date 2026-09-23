@@ -1,0 +1,25 @@
+name: Keep-Alive Ping
+
+on:
+  schedule:
+    # Runs every 3 days at 00:00 UTC (prevents Supabase 7-day inactivity pause)
+    - cron: '0 0 */3 * *'
+  workflow_dispatch:  # Allows manual trigger from GitHub Actions tab
+
+jobs:
+  ping:
+    name: Ping IP-SAKTI Sahayak
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Web Application
+        env:
+          APP_URL: ${{ secrets.APP_URL || 'https://ip-sakti-sahayak.onrender.com' }}
+        run: |
+          echo "Sending keep-alive ping to $APP_URL"
+          RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" "$APP_URL" || echo "failed")
+          echo "Received HTTP Response Code: $RESPONSE"
+          if [ "$RESPONSE" == "200" ] || [ "$RESPONSE" == "301" ] || [ "$RESPONSE" == "302" ]; then
+            echo "✅ Ping successful — App and Supabase database are active."
+          else
+            echo "⚠️ Warning: Endpoint returned status $RESPONSE"
+          fi

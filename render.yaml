@@ -1,0 +1,27 @@
+services:
+  - type: web
+    name: ip-sakti-sahayak
+    runtime: python
+    plan: free
+    region: oregon
+    buildCommand: "./build.sh"
+    startCommand: "gunicorn ip_sakti.wsgi:application --workers 2 --threads 4 --timeout 120"
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.4
+      - key: DJANGO_SETTINGS_MODULE
+        value: ip_sakti.settings.production
+      - key: SECRET_KEY
+        generateValue: true
+      - key: WEB_CONCURRENCY
+        value: "2"
+      - key: DATABASE_URL
+        sync: false
+      - key: GOOGLE_API_KEY
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+      - key: JINA_API_KEY
+        sync: false
+      - key: ALLOWED_HOSTS
+        sync: false
