@@ -10,7 +10,14 @@
         </a>
     </div>
 
-    <div class="card shadow-sm border-0 mb-4">
+    <div id="document-detail-card" class="card shadow-sm border-0 mb-4"
+         {% if document.status == 'processing' or document.status == 'pending' %}
+         hx-get="{% url 'documents:detail' document.pk %}"
+         hx-trigger="every 3s"
+         hx-select="#document-detail-card"
+         hx-target="#document-detail-card"
+         hx-swap="outerHTML"
+         {% endif %}>
         <div class="card-body p-4">
             <div class="d-flex justify-content-between align-items-start">
                 <div>

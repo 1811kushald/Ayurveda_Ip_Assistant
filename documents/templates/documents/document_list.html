@@ -48,7 +48,14 @@
     </div>
 
     <!-- Documents Table -->
-    <div class="card shadow-sm border-0">
+    <div id="document-table-card" class="card shadow-sm border-0"
+         {% if has_processing %}
+         hx-get="{{ request.get_full_path }}"
+         hx-trigger="every 3s"
+         hx-select="#document-table-card"
+         hx-target="#document-table-card"
+         hx-swap="outerHTML"
+         {% endif %}>
         <div class="card-body p-0">
             {% if documents %}
             <div class="table-responsive">

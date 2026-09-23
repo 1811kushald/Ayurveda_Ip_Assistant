@@ -25,6 +25,8 @@ def list_view(request):
     categories = Document.Category.choices
     statuses = Document.Status.choices
 
+    has_processing = any(d.status in ('processing', 'pending') for d in documents)
+
     context = {
         'documents': documents,
         'categories': categories,
@@ -32,6 +34,7 @@ def list_view(request):
         'selected_category': category_filter,
         'selected_status': status_filter,
         'search_query': search_query,
+        'has_processing': has_processing,
     }
     return render(request, 'documents/document_list.html', context)
 

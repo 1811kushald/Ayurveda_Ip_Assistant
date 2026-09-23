@@ -1,4 +1,5 @@
 import logging
+import os
 from concurrent.futures import ThreadPoolExecutor
 from django.db import connections, transaction
 from .models import Document, DocumentChunk
@@ -21,7 +22,7 @@ def _safe_process_document(document_id: int):
     try:
         process_document_pipeline(document_id)
     except Exception as e:
-        logger.error(f"Uncaught exception in background processing of Document #{document_id}: {str(e)}")
+        logger.error(f"Uncaught exception in background processing of Document #{document_id}: {str(e)}", exc_info=True)
     finally:
         # Prevent connection leakage in multithreaded environment
         connections.close_all()
@@ -44,8 +45,8 @@ def process_document_pipeline(document_id: int):
 
     try:
         # 1. Check file existence
-        if not document.file or not os_file_exists(document.file.path):
-            raise FileNotFoundError(f"File path for document '{document.title}' does not exist.")
+        if not document.file or not os.path.exists(document.file.path):
+            raise FileNotFoundError(f"File path for document '{document.title}' does not exist on disk.")
 
         # 2. Extract pages using PyMuPDF
         pages = extract_pages_from_pdf(document.file.path)
@@ -57,29 +58,30 @@ def process_document_pipeline(document_id: int):
         if not raw_chunks:
             raise ValueError("Document yielded 0 chunks after semantic splitting.")
 
-        # 4. Clear existing chunks if reprocessing
+        logger.info(f"Document #{document.id}: Extracted {len(pages)} pages -> {len(raw_chunks)} semantic chunks. Generating embeddings...")
+
+        # 4. Generate embeddings outside of DB transaction to avoid holding locks during network I/O
+        chunks_to_create = []
+        for i, chunk_data in enumerate(raw_chunks, 1):
+            text_content = chunk_data['content']
+            vector = get_embedding(text_content)
+
+            chunk_obj = DocumentChunk(
+                document=document,
+                content=text_content,
+                chunk_index=chunk_data['chunk_index'],
+                page_number=chunk_data['page_number'],
+                section_title=chunk_data['section_title'],
+                embedding=vector,
+                token_count=chunk_data['token_count'],
+            )
+            chunks_to_create.append(chunk_obj)
+            if i % 10 == 0 or i == len(raw_chunks):
+                logger.info(f"Document #{document.id}: Embedded {i}/{len(raw_chunks)} chunks.")
+
+        # 5. Persist chunks in an atomic block (fast DB insert)
         with transaction.atomic():
             DocumentChunk.objects.filter(document=document).delete()
-
-            # 5. Generate embeddings and create DocumentChunk instances
-            chunks_to_create = []
-            for chunk_data in raw_chunks:
-                text_content = chunk_data['content']
-                # Call Gemini Embedding API
-                vector = get_embedding(text_content)
-
-                chunk_obj = DocumentChunk(
-                    document=document,
-                    content=text_content,
-                    chunk_index=chunk_data['chunk_index'],
-                    page_number=chunk_data['page_number'],
-                    section_title=chunk_data['section_title'],
-                    embedding=vector,
-                    token_count=chunk_data['token_count'],
-                )
-                chunks_to_create.append(chunk_obj)
-
-            # Bulk create chunks
             DocumentChunk.objects.bulk_create(chunks_to_create)
 
             # 6. Update document status to COMPLETED
@@ -87,15 +89,10 @@ def process_document_pipeline(document_id: int):
             document.total_chunks = len(chunks_to_create)
             document.save(update_fields=['status', 'total_chunks'])
 
-        logger.info(f"Successfully processed Document #{document.id}: {len(chunks_to_create)} chunks created.")
+        logger.info(f"Successfully processed Document #{document.id}: {len(chunks_to_create)} chunks stored in database.")
 
     except Exception as err:
         logger.error(f"Error processing Document #{document.id}: {str(err)}", exc_info=True)
         document.status = Document.Status.FAILED
         document.error_message = str(err)
         document.save(update_fields=['status', 'error_message'])
-
-
-def os_file_exists(path: str) -> bool:
-    import os
-    return os.path.exists(path)
