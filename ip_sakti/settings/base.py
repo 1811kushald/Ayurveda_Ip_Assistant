@@ -91,10 +91,11 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
-# Session configuration
-SESSION_ENGINE = 'django.contrib.sessions.backends.db'
+# Session configuration (Signed Cookie - Zero DB round trips)
+SESSION_ENGINE = 'django.contrib.sessions.backends.signed_cookies'
 SESSION_COOKIE_AGE = 86400 * 7  # 7 days
 SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = 'Lax'
 
 # Login URLs
 LOGIN_URL = '/accounts/login/'
